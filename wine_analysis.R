@@ -4,12 +4,13 @@
 library(corrplot)
 library(ggplot2)
 library(e1071)
+library(gridExtra)
 
 set.seed(1);
 #Red Wine Analysis
 redwine <- read.csv("winequality-red.csv",sep=";");
 #Correlation Matrix
-png(file="red_wine_corr.png",width=800,height=800);
+png(file="red_wine_corr.png");
 corrplot(cor(redwine));
 dev.off();
 
@@ -83,6 +84,10 @@ testred <- redwine[testindex,];
 cvred <- redwine[cvindex,];
 trainred <- redwine[-testcvindex,];
 
+print(table(testred$quality))
+print(table(cvred$quality))
+print(table(trainred$quality))
+
 #Use cross validation set to find optimal Cost, Gamma
 costVec <- c(0.01,0.03,0.1,0.3,1.0,3.0,10.0,30.0,100.0);
 gammaVec <- c(0.01,0.03,0.1,0.3,1.0,3.0,10.0,30.0,100.0);
@@ -90,22 +95,35 @@ predVec <- c();
 #for (c in costVec){
 #    for(g in gammaVec){
 #        svm.model <- svm(quality ~alcohol+volatile.acidity+fixed.acidity+citric.acid+chlorides+total.sulfur.dioxide+density+sulphates,data=trainred,cost=c,gamma=g);
-	#svm.model <- svm(quality ~alcohol+volatile.acidity,data=trainred,cost=c,gamma=g);
-        #svm.model <- svm(quality ~.,data=trainred,cost=c,gamma=g);
+#	#svm.model <- svm(quality ~alcohol+volatile.acidity,data=trainred,cost=c,gamma=g);
+#        #svm.model <- svm(quality ~.,data=trainred,cost=c,gamma=g);
 #        svm.pred <- predict(svm.model,cvred[,-12]);
 #        predtable <- table(pred=svm.pred,true=cvred[,12]);   
 #        print(sum(diag(predtable))/sum(predtable));
 #	print(c)
 #	print(g)
-#        predVec <- c(predVec,sum(diag(predtable))/sum(predtable));
+#        predVec <- c(predVec,round(sum(diag(predtable))/sum(predtable),3));
 #    }
 #}
-
-#svm.model <- svm(quality ~alcohol+volatile.acidity,data=trainred,cost=100,gamma=1);  
-svm.model <- svm(quality ~alcohol+volatile.acidity,data=trainred,cost=3,gamma=3);
-svm.model <- svm(quality ~alcohol+volatile.acidity+fixed.acidity+citric.acid+chlorides+total.sulfur.dioxide+density+sulphates,data=trainred,cost=3,gamma=3);
+#colnames <- as.character(costVec);
+#rownames <- as.character(gammaVec);
+#predMat <- matrix(predVec,length(gammaVec),length(costVec));
+#predMat <- as.table(predMat);
+#rownames(predMat) <- rownames;
+#colnames(predMat) <- colnames;
+#png(file="red_quality_cv_cgamma_top8features.png");
+#grid.table(predMat);
+#dev.off();
+svm.model <- svm(quality ~.,data=trainred,cost=1,gamma=1);  
+#svm.model <- svm(quality ~alcohol+volatile.acidity,data=trainred,cost=3,gamma=1);
+#svm.model <- svm(quality ~alcohol+volatile.acidity+fixed.acidity+citric.acid+chlorides+total.sulfur.dioxide+density+sulphates,data=trainred,cost=1,gamma=3);
 svm.pred <- predict(svm.model,testred[,-12]);
 predtable <- table(pred=svm.pred,true=testred[,12]);  
+png(file="red_quality_prediction_table.png");
+grid.table(predtable);
+dev.off();
+print("prediction percentage for red quality");
+print(predtable)
 print(sum(diag(predtable))/sum(predtable));
 
 #Define exceptional wines (>7)
@@ -129,8 +147,8 @@ predVec <- c();
 #for (c in costVec){
 #    for(g in gammaVec){
 #        svm.model <- svm(best ~alcohol+volatile.acidity+fixed.acidity+citric.acid+chlorides+total.sulfur.dioxide+density+sulphates,data=trainred,cost=c,gamma=g);
-        #svm.model <- svm(quality ~alcohol+volatile.acidity,data=trainred,cost=c,gamma=g);
-        #svm.model <- svm(quality ~.,data=trainred,cost=c,gamma=g);
+#         #svm.model <- svm(quality ~alcohol+volatile.acidity,data=trainred,cost=c,gamma=g);
+#        svm.model <- svm(best ~alcohol+volatile.acidity+chlorides+total.sulfur.dioxide+density+fixed.acidity+citric.acid+residual.sugar+free.sulfur.dioxide+pH+sulphates,data=trainred,cost=c,gamma=g);
 #        svm.pred <- predict(svm.model,cvred[,-13]);
 #        predtable <- table(pred=svm.pred,true=cvred[,13]);   
 #        precision <- predtable[2,2]/(predtable[2,2]+predtable[2,1]);
@@ -140,18 +158,36 @@ predVec <- c();
 #        print(c)
 #        print(g)
 #        print(predtable)
-#        predVec <- c(predVec,sum(diag(predtable))/sum(predtable));
+#        predVec <- c(predVec,round(f1score,3));
 #    }
 #}
-svm.modelBest <- svm(best ~alcohol+volatile.acidity+fixed.acidity+citric.acid+chlorides+total.sulfur.dioxide+density+sulphates,data=trainred,cost=100,gamma=0.1);
+#colnames <- as.character(costVec);
+#rownames <- as.character(gammaVec);
+#predMat <- matrix(predVec,length(gammaVec),length(costVec));
+#predMat <- as.table(predMat);
+#rownames(predMat) <- rownames;
+#colnames(predMat) <- colnames;
+#png(file="red_best_cv_cgamma_allfeatures.png");
+#grid.table(predMat);
+#dev.off();
+
+#svm.modelBest <- svm(best ~alcohol+volatile.acidity+fixed.acidity+citric.acid+chlorides+total.sulfur.dioxide+density+sulphates,data=trainred,cost=100,gamma=0.1);
+svm.modelBest <- svm(best ~alcohol+volatile.acidity+chlorides+total.sulfur.dioxide+density+fixed.acidity+citric.acid+residual.sugar+free.sulfur.dioxide+pH+sulphates,data=trainred,cost=100.0,gamma=0.3);
 svm.predBest <- predict(svm.modelBest,testred[,-13]);
 predtable <- table(pred=svm.predBest,true=testred[,13]);
 precision <- predtable[2,2]/(predtable[2,2]+predtable[2,1]);
 recall <- predtable[2,2]/(predtable[2,2]+predtable[1,2]);
 f1score <- 2*(precision*recall)/(precision+recall);
+print("predictions for best wines")
 print(f1score);
-print(predtable)
+png(file="red_best_prediction_table.png");
+grid.table(predtable);
+dev.off();
+print(predtable);
+table(testred$quality[svm.predBest==1])
+table(testred$quality[svm.predBest==0])
 
+#worst if <= 4
 redworst <- sapply(as.numeric(as.character(redwine$quality)),function(x){if(x>4){x=0;}else{x=1}})
 
 redwine$worst <- as.factor(redworst);
@@ -171,10 +207,10 @@ gammaVec <- c(0.01,0.03,0.1,0.3,1.0,3.0,10.0,30.0,100.0);
 predVec <- c();
 #for (c in costVec){
 #    for(g in gammaVec){
-        #svm.model <- svm(worst ~alcohol+volatile.acidity+fixed.acidity+citric.acid+chlorides+total.sulfur.dioxide+density+sulphates+residual.sugar+free.sulfur.dioxide+pH,data=trainred,cost=c,gamma=g);
-#        svm.model <- svm(worst ~volatile.acidity,data=trainred,cost=c,gamma=g);
-        #svm.model <- svm(quality ~alcohol+volatile.acidity,data=trainred,cost=c,gamma=g);
-        #svm.model <- svm(quality ~.,data=trainred,cost=c,gamma=g);
+#       svm.model <- svm(worst ~alcohol+volatile.acidity+chlorides+total.sulfur.dioxide+density+fixed.acidity+citric.acid+residual.sugar+free.sulfur.dioxide+pH+sulphates,data=trainred,cost=c,gamma=g);
+        #svm.model <- svm(worst ~volatile.acidity,data=trainred,cost=c,gamma=g);
+       #svm.model <- svm(quality ~alcohol+volatile.acidity,data=trainred,cost=c,gamma=g);
+       #svm.model <- svm(quality ~.,data=trainred,cost=c,gamma=g);
 #        svm.pred <- predict(svm.model,cvred[,-14]);
 #        predtable <- table(pred=svm.pred,true=cvred[,14]);
 #        precision <- predtable[2,2]/(predtable[2,2]+predtable[2,1]);
@@ -184,23 +220,38 @@ predVec <- c();
 #        print(c)
 #        print(g)
 #        print(predtable)
-#        predVec <- c(predVec,sum(diag(predtable))/sum(predtable));
+#        predVec <- c(predVec,round(f1score,3));
 #    }
 #}
+#colnames <- as.character(costVec);
+#rownames <- as.character(gammaVec);
+#predMat <- matrix(predVec,length(gammaVec),length(costVec));
+#predMat <- as.table(predMat);
+#rownames(predMat) <- rownames;
+#colnames(predMat) <- colnames;
+#png(file="red_worst_cv_cgamma_allfeatures.png");
+#grid.table(predMat);
+#dev.off();
 #svm.modelWorst <- svm(worst ~alcohol+volatile.acidity+fixed.acidity+citric.acid+chlorides+total.sulfur.dioxide+density+sulphates+residual.sugar+free.sulfur.dioxide+pH,data=trainred,cost=100,gamma=0.3);
-svm.modelWorst <- svm(worst ~volatile.acidity,data=trainred,cost=100,gamma=0.3);
+svm.modelWorst <- svm(worst ~volatile.acidity,data=trainred,cost=30,gamma=0.3);
 svm.predWorst <- predict(svm.modelWorst,testred[,-14]);
 predtable <- table(pred=svm.predBest,true=testred[,14]);
 precision <- predtable[2,2]/(predtable[2,2]+predtable[2,1]);
 recall <- predtable[2,2]/(predtable[2,2]+predtable[1,2]);
 f1score <- 2*(precision*recall)/(precision+recall);
+print("predictions for worst wines")
 print(f1score);
-print(predtable)
+png(file="red_worst_prediction_table.png");
+grid.table(predtable);
+dev.off();
+print(predtable);
+table(testred$quality[svm.predWorst==1])
+table(testred$quality[svm.predWorst==0])
 
 redwine$quality <- as.numeric(as.character(redwine$quality))
 redwine$best <- as.numeric(as.character(redwine$best));
 redwine$worst <- as.numeric(as.character(redwine$worst));
-png(file="red_wine_corr_best_worst.png",width=800,height=800);
+png(file="red_wine_corr_best_worst.png");
 corrplot(cor(redwine));
 dev.off();
 
@@ -210,7 +261,7 @@ dev.off();
 #White Wine Analysis
 whitewine <- read.csv("winequality-white.csv",sep=";");
 #Correlation Matrix
-png(file="white_wine_corr.png",width=800,height=800);
+png(file="white_wine_corr.png");
 corrplot(cor(whitewine));
 dev.off();
 
@@ -293,27 +344,40 @@ predVec <- c();
 #    for(g in gammaVec){
         #svm.model <- svm(quality ~alcohol+volatile.acidity+fixed.acidity+citric.acid+chlorides+total.sulfur.dioxide+density+sulphates,data=trainwhite,cost=c,gamma=g);
 #        svm.model <- svm(quality ~alcohol+volatile.acidity+chlorides+total.sulfur.dioxide+density,data=trainwhite,cost=c,gamma=g);
-        #svm.model <- svm(quality ~.,data=trainwhite,cost=c,gamma=g);
+#        svm.model <- svm(quality ~.,data=trainwhite,cost=c,gamma=g);
 #        svm.pred <- predict(svm.model,cvwhite[,-12]);
 #        predtable <- table(pred=svm.pred,true=cvwhite[,12]);   
 #        print(sum(diag(predtable))/sum(predtable));
 #	print(c)
 #	print(g)
 #	print(predtable)
-#        predVec <- c(predVec,sum(diag(predtable))/sum(predtable));
+#        predVec <- c(predVec,round(sum(diag(predtable))/sum(predtable),3));
 #    }
 #}
+#colnames <- as.character(costVec);
+#rownames <- as.character(gammaVec);
+#predMat <- matrix(predVec,length(gammaVec),length(costVec));
+#predMat <- as.table(predMat);
+#rownames(predMat) <- rownames;
+#colnames(predMat) <- colnames;
+#png(file="white_quality_cv_cgamma_allfeatures.png");
+#grid.table(predMat);
+#dev.off();
 
-svm.model <- svm(quality ~alcohol+volatile.acidity+chlorides+total.sulfur.dioxide+density+fixed.acidity+citric.acid+residual.sugar+free.sulfur.dioxide+pH+sulphates,data=trainwhite,cost=10.0,gamma=1.0);
+svm.model <- svm(quality ~alcohol+volatile.acidity+chlorides+total.sulfur.dioxide+density+fixed.acidity+citric.acid+residual.sugar+free.sulfur.dioxide+pH+sulphates,data=trainwhite,cost=1.0,gamma=1.0);
 #svm.model <- svm(quality ~alcohol+volatile.acidity+chlorides+total.sulfur.dioxide+density,data=trainwhite,cost=30,gamma=3);
 svm.pred <- predict(svm.model,testwhite[,-12]);
 predtable <- table(pred=svm.pred,true=testwhite[,12]);
-print(sum(diag(predtable))/sum(predtable));
+png(file="white_quality_prediction_table.png");
+grid.table(predtable);
+dev.off();
+print("prediction percentage for white quality");
 print(predtable)
-predVec <- c(predVec,sum(diag(predtable))/sum(predtable));
+print(sum(diag(predtable))/sum(predtable));
 
 
-#Define exceptional white wines (>8)
+
+#Define exceptional white wines (>7)
 whitebest <- sapply(as.numeric(as.character(whitewine$quality)),function(x){if(x<7){x=0;}else{x=1}})
 
 whitewine$best <- as.factor(whitebest);
@@ -331,31 +395,45 @@ trainwhite <- whitewine[-testcvindex,];
 costVec <- c(0.01,0.03,0.1,0.3,1.0,3.0,10.0,30.0,100.0);
 gammaVec <- c(0.01,0.03,0.1,0.3,1.0,3.0,10.0,30.0,100.0);
 predVec <- c();
-#for (c in costVec){
-#    for(g in gammaVec){
-#        #svm.model <- svm(best ~alcohol+volatile.acidity+fixed.acidity+citric.acid+chlorides+total.sulfur.dioxide+density+sulphates,data=trainwhite,cost=c,gamma=g);
-#        #svm.model <- svm(quality ~alcohol+volatile.acidity,data=trainwhite,cost=c,gamma=g);
-#        svm.model <- svm(best ~alcohol+volatile.acidity+chlorides+total.sulfur.dioxide+density+fixed.acidity+citric.acid+residual.sugar+free.sulfur.dioxide+pH+sulphates,data=trainwhite,cost=c,gamma=g);
-#        svm.pred <- predict(svm.model,cvwhite[,-13]);
-#        predtable <- table(pred=svm.pred,true=cvwhite[,13]);   
-#        precision <- predtable[2,2]/(predtable[2,2]+predtable[2,1]);
-#        recall <- predtable[2,2]/(predtable[2,2]+predtable[1,2]);
-#        f1score <- 2*(precision*recall)/(precision+recall);
-#        print(f1score);
-#        print(c)
-#        print(g)
-#        print(predtable)
-#        predVec <- c(predVec,sum(diag(predtable))/sum(predtable));
-#    }
-#}
+for (c in costVec){
+    for(g in gammaVec){
+        #svm.model <- svm(best ~alcohol+volatile.acidity+fixed.acidity+citric.acid+chlorides+total.sulfur.dioxide+density+sulphates,data=trainwhite,cost=c,gamma=g);
+        #svm.model <- svm(quality ~alcohol+volatile.acidity,data=trainwhite,cost=c,gamma=g);
+        svm.model <- svm(best ~alcohol+volatile.acidity+chlorides+total.sulfur.dioxide+density+fixed.acidity+citric.acid+residual.sugar+free.sulfur.dioxide+pH+sulphates,data=trainwhite,cost=c,gamma=g);
+        svm.pred <- predict(svm.model,cvwhite[,-13]);
+        predtable <- table(pred=svm.pred,true=cvwhite[,13]);   
+        precision <- predtable[2,2]/(predtable[2,2]+predtable[2,1]);
+        recall <- predtable[2,2]/(predtable[2,2]+predtable[1,2]);
+        f1score <- 2*(precision*recall)/(precision+recall);
+        print(f1score);
+        print(c)
+        print(g)
+        print(predtable)
+        predVec <- c(predVec,round(f1score,3));
+    }
+}
+colnames <- as.character(costVec);
+rownames <- as.character(gammaVec);
+predMat <- matrix(predVec,length(gammaVec),length(costVec));
+predMat <- as.table(predMat);
+rownames(predMat) <- rownames;
+colnames(predMat) <- colnames;
+png(file="white_best_cv_cgamma_allfeatures.png");
+grid.table(predMat);
+dev.off();
+
 svm.modelBest <- svm(best ~alcohol+volatile.acidity+chlorides+total.sulfur.dioxide+density+fixed.acidity+citric.acid+residual.sugar+free.sulfur.dioxide+pH+sulphates,data=trainwhite,cost=10,gamma=1.0);
 svm.predBest <- predict(svm.modelBest,testwhite[,-13]);
 predtable <- table(pred=svm.predBest,true=testwhite[,13]);
 precision <- predtable[2,2]/(predtable[2,2]+predtable[2,1]);
 recall <- predtable[2,2]/(predtable[2,2]+predtable[1,2]);
 f1score <- 2*(precision*recall)/(precision+recall);
+print("predictions for best wines")
 print(f1score);
-print(predtable)
+png(file="white_best_prediction_table.png");
+grid.table(predtable);
+dev.off();
+print(predtable);
 table(testwhite$quality[svm.predBest==1])
 table(testwhite$quality[svm.predBest==0])
 
@@ -406,7 +484,7 @@ table(testwhite$quality[svm.predWorst==0])
 whitewine$quality <- as.numeric(as.character(whitewine$quality))
 whitewine$best <- as.numeric(as.character(whitewine$best));
 whitewine$worst <- as.numeric(as.character(whitewine$worst));
-png(file="white_wine_corr_best_worst.png",width=800,height=800);
+png(file="white_wine_corr_best_worst.png");
 corrplot(cor(whitewine));
 dev.off();
 
@@ -414,7 +492,7 @@ whitewine$color <- rep(0,nrow(whitewine));
 redwine$color <- rep(1,nrow(redwine));
 
 winesAll <- rbind(whitewine,redwine);
-png(file="allwine_corr.png",width=800,height=800);
+png(file="allwine_corr.png");
 corrplot(cor(winesAll));
 dev.off();
 
@@ -431,8 +509,10 @@ cvall <- winesAll[cvindex,];
 trainall <- winesAll[-testcvindex,];
 
 #Use cross validation set to find optimal Cost, Gamma
-costVec <- c(0.01,0.03,0.1,0.3,1.0,3.0,10.0,30.0,100.0);
-gammaVec <- c(0.01,0.03,0.1,0.3,1.0,3.0,10.0,30.0,100.0);
+#costVec <- c(0.01,0.03,0.1,0.3,1.0,3.0,10.0,30.0,100.0);
+#gammaVec <- c(0.01,0.03,0.1,0.3,1.0,3.0,10.0,30.0,100.0);
+costVec <- c(0.03,0.1,0.3,1.0,3.0,10.0);
+gammaVec <- c(0.03,0.1,0.3,1.0,3.0,10.0);
 predVec <- c();
 #for (c in costVec){
 #    for(g in gammaVec){
@@ -448,9 +528,18 @@ predVec <- c();
 #        print(c)
 #        print(g)
 #        print(predtable)
-#        predVec <- c(predVec,sum(diag(predtable))/sum(predtable));
+#        predVec <- c(predVec,round(f1score,3));
 #    }
 #}
+colnames <- as.character(costVec);
+rownames <- as.character(gammaVec);
+predMat <- matrix(predVec,length(gammaVec),length(costVec));
+predMat <- as.table(predMat);
+rownames(predMat) <- rownames;
+colnames(predMat) <- colnames;
+png(file="white_red_diff_cv_cgamma.png");
+grid.table(predMat);
+dev.off();
 svm.modelColor <- svm(color ~volatile.acidity+chlorides+total.sulfur.dioxide+density+fixed.acidity+citric.acid+residual.sugar+free.sulfur.dioxide+pH+sulphates,data=trainall,cost=10,gamma=0.03);
 svm.predColor <- predict(svm.modelColor,testall[,-15]);
 predtable <- table(pred=svm.predColor,true=testall[,15]);
